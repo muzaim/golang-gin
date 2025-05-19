@@ -1,37 +1,29 @@
 pipeline {
-    agent {
-        docker { image 'golang:1.20' }
-    }
+    agent any
 
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/muzaim/golang-gin', branch: 'main'
+                git url: 'https://github.com/muzaim/golang-gin.git', branch: 'main'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build inside Docker') {
             steps {
-                sh 'go mod tidy'
+                sh '''
+                docker run --rm -v $PWD:/app -w /app golang:1.20 sh -c "
+                    go mod tidy &&
+                    go build -o crud-app &&
+                    go test ./...
+                "
+                '''
             }
         }
+    }
 
-        stage('Build') {
-            steps {
-                sh 'go build -o crud-app'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                sh 'go test ./...'
-            }
-        }
-
-        stage('Archive') {
-            steps {
-                archiveArtifacts artifacts: 'crud-app', onlyIfSuccessful: true
-            }
+    post {
+        always {
+            archiveArtifacts artifacts: 'crud-app', onlyIfSuccessful: true
         }
     }
 }
