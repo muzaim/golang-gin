@@ -1,8 +1,6 @@
 pipeline {
-    agent any
-
-    environment {
-        GO111MODULE = 'on'
+    agent {
+        docker { image 'golang:1.20' }
     }
 
     stages {
@@ -14,21 +12,18 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                echo 'Installing Go modules...'
                 sh 'go mod tidy'
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Building Go project...'
                 sh 'go build -o crud-app'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running tests...'
                 sh 'go test ./...'
             }
         }
@@ -37,15 +32,6 @@ pipeline {
             steps {
                 archiveArtifacts artifacts: 'crud-app', onlyIfSuccessful: true
             }
-        }
-    }
-
-    post {
-        success {
-            echo 'Build successful!'
-        }
-        failure {
-            echo 'Build failed!'
         }
     }
 }
